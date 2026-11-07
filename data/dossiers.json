@@ -1,0 +1,83 @@
+[
+  {
+    "id": "IMP-2026-DEMO01",
+    "codeSuivi": "IMP-2026-DEMO01",
+    "createdAt": "2026-11-02T04:31:48.892Z",
+    "updatedAt": "2026-11-02T04:31:48.901Z",
+    "status": "en_cours",
+    "statusMessage": "Vos fiches de paie et votre avis 2026 ont été vérifiés. Nous calculons le montant à réclamer à la DGFiP.",
+    "beneficiaire": {
+      "civilite": "M.",
+      "nom": "DIALLO",
+      "prenom": "Mamadou",
+      "dateNaissance": "1988-06-14",
+      "telephone": "06 12 34 56 78",
+      "email": "m.diallo.contact@exemple.fr",
+      "adresse": "14 rue de la République",
+      "codePostal": "69002",
+      "ville": "Lyon",
+      "numeroFiscal": "1234567890123",
+      "anneeImposition": "2026",
+      "situationFamiliale": "Marie",
+      "nombreEnfants": 2,
+      "commentaires": "Changement de contrat en milieu d'année, prélèvement à la source important sur mes 3 fiches de paie."
+    },
+    "documents": [
+      {
+        "id": "doc-1",
+        "type": "identite",
+        "label": "Pièce d'identité (CNI / Passeport)",
+        "originalName": "cni_recto_verso.jpg",
+        "storedFilename": "cni_demo.jpg",
+        "relativePath": "dossiers/demo/cni.jpg",
+        "mimeType": "image/jpeg",
+        "size": 1420000,
+        "uploadedAt": "2026-11-02T04:31:48.901Z"
+      },
+      {
+        "id": "doc-2",
+        "type": "avis_imposition",
+        "label": "Avis d'imposition 2026",
+        "originalName": "avis_impot_2026.pdf",
+        "storedFilename": "avis_demo.pdf",
+        "relativePath": "dossiers/demo/avis.pdf",
+        "mimeType": "application/pdf",
+        "size": 2150000,
+        "uploadedAt": "2026-11-02T04:31:48.901Z"
+      },
+      {
+        "id": "doc-3",
+        "type": "fiche_paie_1",
+        "label": "Bulletin de paie (Mois 1)",
+        "originalName": "bulletin_octobre.pdf",
+        "storedFilename": "fiche_1.pdf",
+        "relativePath": "dossiers/demo/fiche1.pdf",
+        "mimeType": "application/pdf",
+        "size": 850000,
+        "uploadedAt": "2026-11-02T04:31:48.901Z"
+      },
+      {
+        "id": "doc-4",
+        "type": "justificatif_domicile",
+        "label": "Facture EDF",
+        "originalName": "facture_edf_octobre.pdf",
+        "storedFilename": "edf_demo.pdf",
+        "relativePath": "dossiers/demo/edf.pdf",
+        "mimeType": "application/pdf",
+        "size": 920000,
+        "uploadedAt": "2026-11-02T04:31:48.901Z"
+      }
+    ],
+    "notesGestionnaire": [
+      {
+        "id": "note-1",
+        "date": "2026-11-02T04:31:48.901Z",
+        "auteur": "Conseiller Ibrahim",
+        "contenu": "Dossier complet. Estimé à environ 850 € de trop-perçu au titre de l'impôt sur le revenu."
+      }
+    ],
+    "restitutionEstimee": 850,
+    "montantRestitue": 0,
+    "consentementRGPD": true
+  }
+]

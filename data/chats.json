@@ -1,0 +1,46 @@
+[
+  {
+    "id": "chat_1793589794097_a6a4f3",
+    "createdAt": "2026-11-02T03:23:14.098Z",
+    "updatedAt": "2026-11-02T03:23:14.099Z",
+    "messages": [
+      {
+        "id": "5e96cd65-c58e-483f-9340-aeff71faa6c3",
+        "sender": "user",
+        "authorName": "Vous",
+        "text": "Je gagne peu, ai-je droit à quelque chose ?",
+        "timestamp": "2026-11-02T03:23:14.098Z"
+      },
+      {
+        "id": "ee7c7775-5c45-4227-9341-b66cbfc18ce3",
+        "sender": "agent",
+        "authorName": "Agent Restitution Impôts",
+        "text": "Oui, tout à fait ! Même si vous ne payez aucun impôt, vous pouvez avoir droit à un remboursement : par exemple s'il y a eu des prélèvements à la source sur vos fiches de paie (qui vous seront restitués à 100%), ou si vous avez droit à des crédits d'impôt (garde d'enfants, emploi à domicile, etc.). L'État vous reverse alors directement ces sommes sur votre compte bancaire.",
+        "timestamp": "2026-11-02T03:23:14.098Z"
+      }
+    ],
+    "unreadAdminCount": 1
+  },
+  {
+    "id": "chat_1793589790568_edb1fe",
+    "createdAt": "2026-11-02T03:23:10.572Z",
+    "updatedAt": "2026-11-02T03:23:10.573Z",
+    "messages": [
+      {
+        "id": "a7bc5052-ef7f-46a7-9613-4c00ce814e00",
+        "sender": "user",
+        "authorName": "Vous",
+        "text": "Quels documents dois-je fournir ?",
+        "timestamp": "2026-11-02T03:23:10.572Z"
+      },
+      {
+        "id": "698e8c4d-9ba4-424d-a693-2fd7f4c76732",
+        "sender": "agent",
+        "authorName": "Agent Restitution Impôts",
+        "text": "Pour déposer votre dossier sur la plateforme, vous avez seulement besoin de 4 éléments essentiels :\n1. Votre pièce d'identité (CNI, Passeport ou Titre de séjour)\n2. Votre avis d'imposition 2026 (ou le plus récent)\n3. Vos 3 dernières fiches de paie (ou attestations France Travail/CAF)\n4. Une facture EDF ou justificatif de domicile de moins de 3 mois.\n\nVous pouvez simplement les prendre en photo avec votre téléphone !",
+        "timestamp": "2026-11-02T03:23:10.572Z"
+      }
+    ],
+    "unreadAdminCount": 1
+  }
+]
