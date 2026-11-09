@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ShieldAlert,
   Search,
@@ -57,12 +57,19 @@ export default function AdminPage() {
   const [newNoteContent, setNewNoteContent] = useState('');
   const [authorName, setAuthorName] = useState('Conseiller');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   // CHAT SESSIONS
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
+  const selectedChatIdRef = useRef<string | null>(null);
+  const adminChatEndRef = useRef<HTMLDivElement>(null);
   const [adminReplyText, setAdminReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
+
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChat?.id || null;
+  }, [selectedChat]);
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,10 +83,13 @@ export default function AdminPage() {
     }
   };
 
-  const fetchDossiers = async () => {
-    setLoading(true);
+  const fetchDossiers = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/dossiers');
+      const res = await fetch(`/api/dossiers?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await res.json();
       if (res.ok) {
         setDossiers(data.dossiers || []);
@@ -87,19 +97,45 @@ export default function AdminPage() {
     } catch (err) {
       console.error('Erreur chargement dossiers:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const markChatAsRead = async (sessionId: string) => {
+    try {
+      await fetch('/api/chat', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      setChatSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, unreadAdminCount: 0 } : s))
+      );
+    } catch {
+      // Ignorer en cas d'erreur réseau
     }
   };
 
   const fetchChatSessions = async () => {
     try {
-      const res = await fetch('/api/chat');
+      const res = await fetch(`/api/chat?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await res.json();
       if (res.ok && data.sessions) {
         setChatSessions(data.sessions);
-        if (selectedChat) {
-          const updated = data.sessions.find((s: ChatSession) => s.id === selectedChat.id);
-          if (updated) setSelectedChat(updated);
+        const currentSelectedId = selectedChatIdRef.current;
+        if (currentSelectedId) {
+          const updated = data.sessions.find((s: ChatSession) => s.id === currentSelectedId);
+          if (updated) {
+            setSelectedChat((prev) => {
+              if (prev && prev.id === currentSelectedId && prev.messages.length !== updated.messages.length) {
+                setTimeout(() => adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+              }
+              return updated;
+            });
+          }
         }
       }
     } catch (err) {
@@ -111,10 +147,16 @@ export default function AdminPage() {
     if (isAuthenticated) {
       fetchDossiers();
       fetchChatSessions();
-      const interval = setInterval(() => {
+      const chatInterval = setInterval(() => {
         fetchChatSessions();
-      }, 10000);
-      return () => clearInterval(interval);
+      }, 3000);
+      const dossierInterval = setInterval(() => {
+        fetchDossiers(true);
+      }, 8000);
+      return () => {
+        clearInterval(chatInterval);
+        clearInterval(dossierInterval);
+      };
     }
   }, [isAuthenticated]);
 
@@ -125,6 +167,15 @@ export default function AdminPage() {
     setMontantRestitue(dossier.montantRestitue ? String(dossier.montantRestitue) : '');
     setRestitutionEstimee(dossier.restitutionEstimee ? String(dossier.restitutionEstimee) : '');
     setCopiedInfo(false);
+    setUpdateSuccess(false);
+  };
+
+  const formatWhatsAppPhone = (phone: string) => {
+    const digits = phone.replace(/[^0-9]/g, '');
+    if (digits.startsWith('0') && digits.length === 10) {
+      return '33' + digits.slice(1);
+    }
+    return digits;
   };
 
   const handleCopyBeneficiaire = () => {
@@ -201,13 +252,14 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
   const handleUpdateDossier = async () => {
     if (!selectedDossier) return;
     setIsUpdating(true);
+    setUpdateSuccess(false);
 
     try {
       const payload: any = {
         status: newStatus,
         statusMessage: newStatusMessage,
-        restitutionEstimee: restitutionEstimee ? parseFloat(restitutionEstimee) : undefined,
-        montantRestitue: montantRestitue ? parseFloat(montantRestitue) : undefined,
+        restitutionEstimee: restitutionEstimee.trim() !== '' ? parseFloat(restitutionEstimee) : null,
+        montantRestitue: montantRestitue.trim() !== '' ? parseFloat(montantRestitue) : null,
       };
 
       if (newNoteContent.trim()) {
@@ -227,7 +279,9 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
       if (res.ok && data.dossier) {
         setSelectedDossier(data.dossier);
         setNewNoteContent('');
-        fetchDossiers();
+        setUpdateSuccess(true);
+        setTimeout(() => setUpdateSuccess(false), 3500);
+        fetchDossiers(true);
       }
     } catch (err) {
       console.error('Erreur mise à jour dossier:', err);
@@ -258,6 +312,7 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
         setSelectedChat((prev) => (prev ? { ...prev, messages: data.messages } : null));
         setAdminReplyText('');
         fetchChatSessions();
+        setTimeout(() => adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
       }
     } catch (err) {
       console.error('Erreur envoi réponse conseiller:', err);
@@ -605,7 +660,13 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                   return (
                     <div
                       key={session.id}
-                      onClick={() => setSelectedChat(session)}
+                      onClick={() => {
+                        setSelectedChat(session);
+                        if (session.unreadAdminCount > 0) {
+                          markChatAsRead(session.id);
+                        }
+                        setTimeout(() => adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                      }}
                       className={`p-3.5 rounded-2xl cursor-pointer transition border ${
                         isSelected
                           ? 'border-blue-600 bg-blue-50/60 shadow-xs'
@@ -613,8 +674,13 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                       }`}
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <span className="font-bold text-xs text-slate-900 truncate max-w-[140px]">
-                          Visiteur #{session.id.slice(-6)}
+                        <span className="font-bold text-xs text-slate-900 truncate max-w-[140px] flex items-center gap-1.5">
+                          <span>Visiteur #{session.id.slice(-6)}</span>
+                          {(session.unreadAdminCount || 0) > 0 && (
+                            <span className="px-1.5 py-0.5 bg-red-600 text-white text-[9px] font-extrabold rounded-full animate-pulse">
+                              {session.unreadAdminCount}
+                            </span>
+                          )}
                         </span>
                         <span className="text-[10px] text-slate-400">
                           {new Date(session.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -689,6 +755,7 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                       </div>
                     );
                   })}
+                  <div ref={adminChatEndRef} />
                 </div>
 
                 <form onSubmit={handleSendAdminChat} className="flex gap-2">
@@ -774,7 +841,7 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                         {selectedDossier.beneficiaire.telephone}
                       </a>
                       <a
-                        href={`https://wa.me/${selectedDossier.beneficiaire.telephone.replace(/[^0-9]/g, '')}`}
+                        href={`https://wa.me/${formatWhatsAppPhone(selectedDossier.beneficiaire.telephone)}`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full hover:bg-emerald-200 transition"
@@ -961,6 +1028,13 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                     />
                   </div>
                 </div>
+
+                {updateSuccess && (
+                  <div className="p-2.5 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2 justify-center animate-in fade-in duration-200">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Modifications enregistrées avec succès !</span>
+                  </div>
+                )}
 
                 <button
                   onClick={handleUpdateDossier}

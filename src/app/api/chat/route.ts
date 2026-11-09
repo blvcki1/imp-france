@@ -9,7 +9,15 @@ import {
 } from '@/lib/chat-storage';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const runtime = 'nodejs';
+
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
 
 // GET: Récupère les sessions ou les messages d'une session spécifique
 export async function GET(request: NextRequest) {
@@ -20,15 +28,37 @@ export async function GET(request: NextRequest) {
     if (sessionId) {
       const session = getChatSession(sessionId);
       if (!session) {
-        return NextResponse.json({ success: true, messages: [] });
+        return NextResponse.json({ success: true, messages: [] }, { headers: noCacheHeaders });
       }
-      return NextResponse.json({ success: true, session });
+      return NextResponse.json({ success: true, session }, { headers: noCacheHeaders });
     }
 
     const sessions = getAllChatSessions();
-    return NextResponse.json({ success: true, sessions });
+    return NextResponse.json({ success: true, sessions }, { headers: noCacheHeaders });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
+  }
+}
+
+// PATCH: Marquer une session comme lue par l'admin
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { sessionId } = body;
+
+    if (!sessionId) {
+      return NextResponse.json({ error: 'sessionId requis' }, { status: 400, headers: noCacheHeaders });
+    }
+
+    const session = getChatSession(sessionId);
+    if (session && session.unreadAdminCount > 0) {
+      session.unreadAdminCount = 0;
+      saveChatSession(session);
+    }
+
+    return NextResponse.json({ success: true, session }, { headers: noCacheHeaders });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
 }
 
@@ -39,7 +69,10 @@ export async function POST(request: NextRequest) {
     const { sessionId, text, sender, authorName, dossierCode } = body;
 
     if (!text || !text.trim()) {
-      return NextResponse.json({ error: 'Le message ne peut pas être vide' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Le message ne peut pas être vide' },
+        { status: 400, headers: noCacheHeaders }
+      );
     }
 
     const currentSessionId = sessionId || `chat_${Date.now()}_${crypto.randomUUID().slice(0, 6)}`;
@@ -89,16 +122,18 @@ export async function POST(request: NextRequest) {
 
     saveChatSession(session);
 
-    return NextResponse.json({
-      success: true,
-      sessionId: session.id,
-      userMessage: userMsg,
-      agentMessage: agentMsg,
-      messages: session.messages,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        sessionId: session.id,
+        userMessage: userMsg,
+        agentMessage: agentMsg,
+        messages: session.messages,
+      },
+      { headers: noCacheHeaders }
+    );
   } catch (error: any) {
     console.error('Erreur API Chat:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
 }
-

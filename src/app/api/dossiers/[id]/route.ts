@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDossierById, updateDossierStatus, addDossierNote, saveDossier, getAllDossiers } from '@/lib/storage';
-import fs from 'fs';
-import path from 'path';
+import { getDossierById, saveDossier } from '@/lib/storage';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const runtime = 'nodejs';
+
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
 
 interface RouteProps {
   params: Promise<{ id: string }>;
@@ -14,11 +20,11 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
     const { id } = await params;
     const dossier = getDossierById(id);
     if (!dossier) {
-      return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404 });
+      return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404, headers: noCacheHeaders });
     }
-    return NextResponse.json({ success: true, dossier });
+    return NextResponse.json({ success: true, dossier }, { headers: noCacheHeaders });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
 }
 
@@ -29,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
 
     const dossier = getDossierById(id);
     if (!dossier) {
-      return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404 });
+      return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404, headers: noCacheHeaders });
     }
 
     if (body.status) {
@@ -38,11 +44,11 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     if (body.statusMessage !== undefined) {
       dossier.statusMessage = body.statusMessage;
     }
-    if (body.restitutionEstimee !== undefined) {
-      dossier.restitutionEstimee = body.restitutionEstimee;
+    if ('restitutionEstimee' in body) {
+      dossier.restitutionEstimee = body.restitutionEstimee ?? undefined;
     }
-    if (body.montantRestitue !== undefined) {
-      dossier.montantRestitue = body.montantRestitue;
+    if ('montantRestitue' in body) {
+      dossier.montantRestitue = body.montantRestitue ?? undefined;
     }
     if (body.newNote && body.newNote.contenu) {
       dossier.notesGestionnaire.push({
@@ -54,9 +60,8 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     }
 
     const updated = saveDossier(dossier);
-    return NextResponse.json({ success: true, dossier: updated });
+    return NextResponse.json({ success: true, dossier: updated }, { headers: noCacheHeaders });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
 }
-

@@ -10,12 +10,9 @@ import {
   FileText,
   ShieldCheck,
   Send,
-  HelpCircle,
-  Phone,
-  ArrowRight,
-  Sparkles,
+  RefreshCw,
+  Coins,
 } from 'lucide-react';
-import Link from 'next/link';
 
 function SuiviContent() {
   const searchParams = useSearchParams();
@@ -32,7 +29,13 @@ function SuiviContent() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dossiers?code=${encodeURIComponent(codeToSearch.trim())}`);
+      const res = await fetch(
+        `/api/dossiers?code=${encodeURIComponent(codeToSearch.trim())}&_t=${Date.now()}`,
+        {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        }
+      );
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Dossier introuvable');
@@ -48,6 +51,7 @@ function SuiviContent() {
 
   useEffect(() => {
     if (initialCode) {
+      setCode(initialCode);
       fetchDossier(initialCode);
     }
   }, [initialCode]);
@@ -182,9 +186,20 @@ function SuiviContent() {
                   </div>
                 </div>
 
-                <div className="sm:text-right bg-white/70 py-2 px-4 rounded-xl border border-black/5">
-                  <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Dossier N°</div>
-                  <div className="text-lg font-mono font-black text-slate-900">{dossier.codeSuivi}</div>
+                <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between">
+                  <div className="sm:text-right bg-white/70 py-2 px-4 rounded-xl border border-black/5">
+                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Dossier N°</div>
+                    <div className="text-lg font-mono font-black text-slate-900">{dossier.codeSuivi}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchDossier(dossier.codeSuivi)}
+                    disabled={loading}
+                    title="Actualiser le statut"
+                    className="p-3 rounded-xl bg-white/80 hover:bg-white text-slate-700 border border-black/10 transition shadow-xs"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
               </div>
             );
@@ -253,18 +268,34 @@ function SuiviContent() {
             </p>
           </div>
 
-          {/* MONTANT RESTITUÉ SI DISPONIBLE */}
-          {dossier.montantRestitue && (
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 flex items-center justify-between">
+          {/* MONTANT RESTITUÉ OU ESTIMÉ SI DISPONIBLE */}
+          {dossier.montantRestitue ? (
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">Montant de la restitution confirmée</span>
-                <p className="text-xs text-emerald-700">Somme en cours de versement par la DGFiP</p>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Montant de la restitution confirmée
+                </span>
+                <p className="text-xs text-emerald-700 mt-0.5">Somme validée et en cours de versement par la DGFiP</p>
               </div>
               <div className="text-3xl font-black text-emerald-700 font-mono">
-                {dossier.montantRestitue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                {Number(dossier.montantRestitue).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
               </div>
             </div>
-          )}
+          ) : dossier.restitutionEstimee ? (
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-1.5">
+                  <Coins className="w-4 h-4 text-blue-600" />
+                  Estimation de votre restitution d’impôt
+                </span>
+                <p className="text-xs text-blue-700 mt-0.5">Montant calculé par votre conseiller après analyse de vos pièces</p>
+              </div>
+              <div className="text-3xl font-black text-blue-700 font-mono">
+                {Number(dossier.restitutionEstimee).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              </div>
+            </div>
+          ) : null}
 
           {/* DOCUMENTS ATTACHÉS AU DOSSIER */}
           <div>
@@ -272,17 +303,18 @@ function SuiviContent() {
               Pièces justificatives enregistrées ({dossier.documentsCount})
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {dossier.documents && dossier.documents.map((doc: any) => (
-                <div key={doc.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
-                    ✓
+              {dossier.documents &&
+                dossier.documents.map((doc: any) => (
+                  <div key={doc.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                      ✓
+                    </div>
+                    <div className="overflow-hidden flex-1">
+                      <p className="text-xs font-bold text-slate-800 truncate">{doc.label}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{doc.originalName}</p>
+                    </div>
                   </div>
-                  <div className="overflow-hidden flex-1">
-                    <p className="text-xs font-bold text-slate-800 truncate">{doc.label}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{doc.originalName}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -298,4 +330,3 @@ export default function SuiviPage() {
     </Suspense>
   );
 }
-

@@ -33,6 +33,108 @@ interface UploadItem {
   previewUrl: string | null;
 }
 
+interface UploadBoxProps {
+  item: UploadItem;
+  onFileChange: (key: string, file: File | null) => void;
+  onRemoveFile: (key: string) => void;
+}
+
+// COMPOSANT INDÉPENDANT POUR L'UPLOAD DE DOCUMENTS (Hooks React isolés et conformes)
+function UploadBox({ item, onFileChange, onRemoveFile }: UploadBoxProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleBoxClick = () => {
+    inputRef.current?.click();
+  };
+
+  return (
+    <div
+      className={`p-5 rounded-2xl border-2 transition-all ${
+        item.file
+          ? 'border-emerald-500 bg-emerald-50/50 shadow-sm'
+          : 'border-dashed border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50/50'
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-slate-900 text-base">{item.label}</h4>
+            {item.required && (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                Obligatoire
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">{item.hint}</p>
+        </div>
+
+        {item.file && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full self-start sm:self-auto">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            Document prêt
+          </span>
+        )}
+      </div>
+
+      {item.file ? (
+        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-emerald-200 mt-2">
+          <div className="flex items-center gap-3 overflow-hidden">
+            {item.previewUrl ? (
+              <img
+                src={item.previewUrl}
+                alt="Aperçu"
+                className="w-12 h-12 object-cover rounded-lg border border-slate-200"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs uppercase">
+                PDF
+              </div>
+            )}
+            <div className="overflow-hidden">
+              <p className="text-sm font-medium text-slate-800 truncate max-w-xs">{item.file.name}</p>
+              <p className="text-xs text-slate-400">{(item.file.size / (1024 * 1024)).toFixed(2)} Mo</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onRemoveFile(item.key)}
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+            title="Supprimer ce document"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
+      ) : (
+        <div
+          onClick={handleBoxClick}
+          className="cursor-pointer py-6 px-4 rounded-xl border border-dashed border-slate-200 hover:border-blue-400 bg-slate-50/70 hover:bg-blue-50/40 text-center transition flex flex-col items-center justify-center gap-2 group"
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                onFileChange(item.key, e.target.files[0]);
+                e.target.value = '';
+              }
+            }}
+          />
+          <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+            <Camera className="w-6 h-6" />
+          </div>
+          <p className="text-sm font-semibold text-slate-800">
+            <span className="text-blue-600 underline">Prendre une photo</span> ou choisir un fichier
+          </p>
+          <p className="text-xs text-slate-400">Photo nette depuis votre téléphone ou fichier PDF / Image (max 20 Mo)</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DossierForm() {
   const [step, setStep] = useState(1);
   const totalSteps = 5;
@@ -261,11 +363,15 @@ export default function DossierForm() {
 
       setSubmittedCode(res.codeSuivi);
       setStep(6); // Écran de succès
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // Ignore si confetti non supporté
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Une erreur est survenue lors de l’envoi de votre dossier.');
     } finally {
@@ -275,103 +381,15 @@ export default function DossierForm() {
 
   const copyCodeToClipboard = () => {
     if (submittedCode) {
-      navigator.clipboard.writeText(submittedCode);
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(submittedCode).catch(() => {});
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     }
   };
 
-  // ZONE D'UPLOAD COMPOSANT
-  const renderUploadBox = (item: UploadItem) => {
-    const inputRef = useRef<HTMLInputElement>(null);
 
-    return (
-      <div
-        key={item.key}
-        className={`p-5 rounded-2xl border-2 transition-all ${
-          item.file
-            ? 'border-emerald-500 bg-emerald-50/50 shadow-sm'
-            : 'border-dashed border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50/50'
-        }`}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="font-semibold text-slate-900 text-base">{item.label}</h4>
-              {item.required && (
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                  Obligatoire
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">{item.hint}</p>
-          </div>
-
-          {item.file && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full self-start sm:self-auto">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Document prêt
-            </span>
-          )}
-        </div>
-
-        {item.file ? (
-          <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-emerald-200 mt-2">
-            <div className="flex items-center gap-3 overflow-hidden">
-              {item.previewUrl ? (
-                <img
-                  src={item.previewUrl}
-                  alt="Aperçu"
-                  className="w-12 h-12 object-cover rounded-lg border border-slate-200"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs uppercase">
-                  PDF
-                </div>
-              )}
-              <div className="overflow-hidden">
-                <p className="text-sm font-medium text-slate-800 truncate max-w-xs">{item.file.name}</p>
-                <p className="text-xs text-slate-400">{(item.file.size / (1024 * 1024)).toFixed(2)} Mo</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => removeFile(item.key)}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-              title="Supprimer ce document"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
-        ) : (
-          <div
-            onClick={() => inputRef.current?.click()}
-            className="cursor-pointer py-6 px-4 rounded-xl border border-dashed border-slate-200 hover:border-blue-400 bg-slate-50/70 hover:bg-blue-50/40 text-center transition flex flex-col items-center justify-center gap-2 group"
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*,application/pdf"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  handleFileChange(item.key, e.target.files[0]);
-                }
-              }}
-            />
-            <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
-              <Camera className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-semibold text-slate-800">
-              <span className="text-blue-600 underline">Prendre une photo</span> ou choisir un fichier
-            </p>
-            <p className="text-xs text-slate-400">Photo nette depuis votre téléphone ou fichier PDF / Image (max 20 Mo)</p>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // ÉCRAN FINAL : SUCCÈS & CODE ATTRIBUÉ
   if (step === 6 && submittedCode) {
@@ -600,7 +618,7 @@ export default function DossierForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
                     Adresse postale
@@ -617,12 +635,27 @@ export default function DossierForm() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                    Code postal
+                  </label>
+                  <input
+                    type="text"
+                    name="codePostal"
+                    placeholder="Ex: 75001"
+                    maxLength={5}
+                    value={formData.codePostal}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
                     Ville / Commune *
                   </label>
                   <input
                     type="text"
                     name="ville"
-                    placeholder="Ex: Lyon, Paris, Marseille..."
+                    placeholder="Ex: Lyon, Paris..."
                     value={formData.ville}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
@@ -664,7 +697,11 @@ export default function DossierForm() {
               💡 <strong>Conseil photo :</strong> Posez votre document bien à plat dans un endroit éclairé et assurez-vous que les 4 coins et le texte sont bien lisibles.
             </div>
 
-            {renderUploadBox(uploads.file_identite)}
+            <UploadBox
+              item={uploads.file_identite}
+              onFileChange={handleFileChange}
+              onRemoveFile={removeFile}
+            />
           </div>
         )}
 
@@ -683,7 +720,11 @@ export default function DossierForm() {
               📌 <strong>Vous n'avez pas l'avis 2026 sous la main ?</strong> Vous pouvez fournir l'avis 2025 ou votre déclaration récente / ASDIR. Nous pourrons tout de même commencer l'étude de votre dossier.
             </div>
 
-            {renderUploadBox(uploads.file_avis_imposition)}
+            <UploadBox
+              item={uploads.file_avis_imposition}
+              onFileChange={handleFileChange}
+              onRemoveFile={removeFile}
+            />
           </div>
         )}
 
@@ -699,9 +740,21 @@ export default function DossierForm() {
             </div>
 
             <div className="space-y-4">
-              {renderUploadBox(uploads.file_fiche_paie_1)}
-              {renderUploadBox(uploads.file_fiche_paie_2)}
-              {renderUploadBox(uploads.file_fiche_paie_3)}
+              <UploadBox
+                item={uploads.file_fiche_paie_1}
+                onFileChange={handleFileChange}
+                onRemoveFile={removeFile}
+              />
+              <UploadBox
+                item={uploads.file_fiche_paie_2}
+                onFileChange={handleFileChange}
+                onRemoveFile={removeFile}
+              />
+              <UploadBox
+                item={uploads.file_fiche_paie_3}
+                onFileChange={handleFileChange}
+                onRemoveFile={removeFile}
+              />
             </div>
           </div>
         )}
@@ -718,8 +771,16 @@ export default function DossierForm() {
             </div>
 
             <div className="space-y-4">
-              {renderUploadBox(uploads.file_justificatif_domicile)}
-              {renderUploadBox(uploads.file_rib)}
+              <UploadBox
+                item={uploads.file_justificatif_domicile}
+                onFileChange={handleFileChange}
+                onRemoveFile={removeFile}
+              />
+              <UploadBox
+                item={uploads.file_rib}
+                onFileChange={handleFileChange}
+                onRemoveFile={removeFile}
+              />
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">

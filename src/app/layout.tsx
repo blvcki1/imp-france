@@ -52,20 +52,21 @@ export default function RootLayout({
               </div>
             </Link>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 href="/suivi"
-                className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 transition bg-white shadow-sm"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 transition bg-white shadow-sm"
               >
-                <FileSearch className="w-4 h-4 text-blue-600" />
+                <FileSearch className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Suivre mon dossier</span>
               </Link>
 
               <Link
                 href="/#formulaire"
-                className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
               >
-                Déposer mon dossier
+                <span>Déposer</span>
+                <span className="hidden sm:inline">mon dossier</span>
               </Link>
             </div>
           </div>
