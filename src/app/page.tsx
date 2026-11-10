@@ -24,40 +24,145 @@ import {
 export default function HomePage() {
   const partenaires = [
     {
-      nom: 'Alliance Fiscale Solidaire',
-      categorie: 'Conseil & Expertise Juridique',
-      sigle: 'AFS',
-      description: 'Accompagnement gracieux des contribuables',
+      nom: 'Finances Publiques (DGFiP)',
+      categorie: 'Administration Fiscale',
+      description: 'Instruction & versement des restitutions',
+      logo: (
+        <svg viewBox="0 0 120 48" className="w-full h-11">
+          {/* Drapeau tricolore stylisé Marianne */}
+          <rect x="6" y="8" width="10" height="22" rx="1.5" fill="#000091" />
+          <rect x="16" y="8" width="10" height="22" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="0.8" />
+          <rect x="26" y="8" width="10" height="22" rx="1.5" fill="#E1000F" />
+          <text x="6" y="40" fill="#1E293B" fontSize="6.5" fontWeight="800" fontFamily="sans-serif" letterSpacing="0.3">
+            RÉPUBLIQUE FRANÇAISE
+          </text>
+          <line x1="42" y1="8" x2="42" y2="38" stroke="#CBD5E1" strokeWidth="1" />
+          <text x="47" y="19" fill="#000091" fontSize="9.5" fontWeight="900" fontFamily="sans-serif">
+            FINANCES
+          </text>
+          <text x="47" y="29" fill="#000091" fontSize="9.5" fontWeight="900" fontFamily="sans-serif">
+            PUBLIQUES
+          </text>
+          <text x="47" y="38" fill="#0284C7" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">
+            impots.gouv.fr
+          </text>
+        </svg>
+      ),
     },
     {
-      nom: 'Réseau Entraide & Travailleurs',
-      categorie: 'Fédération Associative',
-      sigle: 'RET',
-      description: 'Relais communautaire en régions',
+      nom: 'France Services',
+      categorie: 'Réseau National d’Accompagnement',
+      description: 'Guichet de proximité citoyen',
+      logo: (
+        <svg viewBox="0 0 120 48" className="w-full h-11">
+          {/* Hexagone France Services */}
+          <polygon
+            points="22,6 35,13 35,28 22,35 9,28 9,13"
+            fill="#EFF6FF"
+            stroke="#000091"
+            strokeWidth="2.2"
+          />
+          <path d="M15 21 L20 26 L29 16" fill="none" stroke="#E1000F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <text x="42" y="21" fill="#000091" fontSize="11" fontWeight="900" fontFamily="sans-serif">
+            France
+          </text>
+          <text x="42" y="33" fill="#2563EB" fontSize="11" fontWeight="800" fontFamily="sans-serif">
+            Services
+          </text>
+          <circle cx="106" cy="14" r="3.5" fill="#E1000F" />
+        </svg>
+      ),
     },
     {
-      nom: 'Cabinet Audit & Gestion Solidaire',
-      categorie: 'Comptabilité Citoyenne',
-      sigle: 'AGS',
-      description: 'Vérification et chiffrage des droits',
+      nom: 'Allocations Familiales (CAF)',
+      categorie: 'Solidarité & Aides Sociales',
+      description: 'Droits sociaux & soutien aux foyers',
+      logo: (
+        <svg viewBox="0 0 120 48" className="w-full h-11">
+          {/* Emblème CAF Bleu & Émeraude */}
+          <rect x="6" y="7" width="34" height="34" rx="8" fill="#004C99" />
+          <circle cx="17" cy="16" r="3.2" fill="#38BDF8" />
+          <circle cx="29" cy="16" r="3.2" fill="#34D399" />
+          <circle cx="23" cy="21" r="2.6" fill="#FFFFFF" />
+          <path d="M12 33 C12 26 22 26 22 33" fill="#38BDF8" />
+          <path d="M24 33 C24 26 34 26 34 33" fill="#34D399" />
+          <text x="46" y="19" fill="#004C99" fontSize="9" fontWeight="900" fontFamily="sans-serif">
+            ALLOCATIONS
+          </text>
+          <text x="46" y="29" fill="#004C99" fontSize="9" fontWeight="900" fontFamily="sans-serif">
+            FAMILIALES
+          </text>
+          <text x="46" y="38" fill="#059669" fontSize="7.5" fontWeight="800" fontFamily="sans-serif">
+            Caf.fr
+          </text>
+        </svg>
+      ),
     },
     {
-      nom: 'Mutuelle d’Action Sociale',
-      categorie: 'Protection & Solidarité',
-      sigle: 'MAS',
-      description: 'Soutien aux familles modestes',
+      nom: 'France Travail',
+      categorie: 'Emploi & Revenus d’Activité',
+      description: 'Attestations fiscales & suivi salarié',
+      logo: (
+        <svg viewBox="0 0 120 48" className="w-full h-11">
+          {/* Arche tricolore France Travail */}
+          <circle cx="22" cy="24" r="14" fill="none" stroke="#000091" strokeWidth="3.5" strokeDasharray="55 35" />
+          <circle cx="22" cy="24" r="8" fill="none" stroke="#E1000F" strokeWidth="3" strokeDasharray="30 25" />
+          <circle cx="22" cy="24" r="3" fill="#2563EB" />
+          <text x="43" y="21" fill="#0F172A" fontSize="10.5" fontWeight="900" fontFamily="sans-serif">
+            France
+          </text>
+          <text x="43" y="33" fill="#000091" fontSize="10.5" fontWeight="900" fontFamily="sans-serif">
+            Travail
+          </text>
+          <circle cx="91" cy="30" r="2.5" fill="#E1000F" />
+        </svg>
+      ),
     },
     {
-      nom: 'Coopérative Citoyenne de France',
-      categorie: 'Économie Solidaire',
-      sigle: 'CCF',
-      description: 'Inclusion numérique et administrative',
+      nom: 'EDF Service Public',
+      categorie: 'Fournisseur Officiel Énergie',
+      description: 'Justificatifs de domicile & chèque énergie',
+      logo: (
+        <svg viewBox="0 0 120 48" className="w-full h-11">
+          {/* Rosace turbine orange & texte EDF bleu */}
+          <circle cx="22" cy="20" r="5" fill="#FF5722" />
+          <ellipse cx="13" cy="26" rx="5" ry="2.8" transform="rotate(-30 13 26)" fill="#FF5722" />
+          <ellipse cx="31" cy="26" rx="5" ry="2.8" transform="rotate(30 31 26)" fill="#FF5722" />
+          <path d="M10 35 Q22 30 34 35" fill="none" stroke="#FF5722" strokeWidth="2.8" strokeLinecap="round" />
+          <text x="44" y="30" fill="#001A70" fontSize="22" fontWeight="900" fontStyle="italic" fontFamily="sans-serif" letterSpacing="-1">
+            edf
+          </text>
+          <text x="83" y="24" fill="#64748B" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">
+            SERVICE
+          </text>
+          <text x="83" y="32" fill="#FF5722" fontSize="6.5" fontWeight="800" fontFamily="sans-serif">
+            PUBLIC
+          </text>
+        </svg>
+      ),
     },
     {
-      nom: 'Permanence Sociale Régions',
-      categorie: 'Médiation Administrative',
-      sigle: 'PSR',
-      description: 'Aide locale de proximité',
+      nom: 'Service-Public.fr',
+      categorie: 'Portail Officiel de l’État',
+      description: 'Simplification des démarches en ligne',
+      logo: (
+        <svg viewBox="0 0 120 48" className="w-full h-11">
+          {/* Bandeau Marianne République Française */}
+          <rect x="7" y="10" width="9" height="18" rx="1" fill="#000091" />
+          <rect x="16" y="10" width="9" height="18" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="0.8" />
+          <rect x="25" y="10" width="9" height="18" rx="1" fill="#E1000F" />
+          <path d="M7 34 L34 34" stroke="#000091" strokeWidth="2" />
+          <text x="40" y="22" fill="#000091" fontSize="9.5" fontWeight="900" fontFamily="sans-serif">
+            Service-Public
+          </text>
+          <text x="105" y="22" fill="#E1000F" fontSize="8.5" fontWeight="900" fontFamily="sans-serif">
+            .fr
+          </text>
+          <text x="40" y="33" fill="#475569" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">
+            DÉMARCHES EN LIGNE
+          </text>
+        </svg>
+      ),
     },
   ];
 
@@ -185,42 +290,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION ENSEIGNES & ENTREPRISES PARTENAIRES */}
+      {/* SECTION ENSEIGNES & ORGANISMES PUBLICS PARTENAIRES */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 rounded-3xl p-8 sm:p-10 text-white shadow-xl">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-6 border-b border-white/10">
             <div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider mb-2">
                 <HeartHandshake className="w-4 h-4 text-emerald-400" />
-                Réseau Solidaire & Partenaires
+                Organismes & Enseignes Publiques Partenaires
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">
-                Nos Enseignes & Partenaires en Régions
+                Nos Enseignes Publiques & Partenaires Officiels
               </h2>
               <p className="text-slate-300 text-sm mt-1 max-w-xl">
-                Ces organismes, collectifs d’entreprises et réseaux associatifs soutiennent notre permanence pour vous garantir un accompagnement fiable et gratuit.
+                En lien avec les principaux organismes publics et enseignes nationales pour faciliter la vérification de vos justificatifs et le versement de vos restitutions.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-white/5 px-4 py-2 rounded-xl border border-white/10 shrink-0">
               <BadgeCheck className="w-4 h-4 text-emerald-400" />
-              Réseau Partenaire Certifié
+              Enseignes Publiques Agréées
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {partenaires.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 rounded-2xl p-4 transition-all duration-200 flex flex-col justify-between text-center group"
+                className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 rounded-2xl p-4 transition-all duration-200 flex items-center gap-4 group"
               >
-                <div className="w-12 h-12 rounded-xl bg-blue-600/20 text-blue-300 group-hover:bg-blue-600 group-hover:text-white font-black text-sm flex items-center justify-center mx-auto mb-3 transition shadow-sm border border-blue-400/20">
-                  {item.sigle}
+                <div className="w-32 h-16 rounded-xl bg-white p-2 flex items-center justify-center shrink-0 shadow-md border border-slate-200 group-hover:scale-105 transition-transform">
+                  {item.logo}
                 </div>
-                <div>
-                  <h4 className="font-bold text-xs text-white leading-snug group-hover:text-blue-300 transition">
-                    {item.nom}
-                  </h4>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{item.categorie}</p>
+                <div className="text-left min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-bold text-sm text-white leading-snug group-hover:text-blue-300 transition truncate">
+                      {item.nom}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] font-semibold text-blue-300 mt-0.5 uppercase tracking-wider">
+                    {item.categorie}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                    {item.description}
+                  </p>
                 </div>
               </div>
             ))}
