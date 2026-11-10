@@ -317,21 +317,35 @@ export default function DossierForm() {
     return true;
   };
 
+  const scrollToForm = () => {
+    setTimeout(() => {
+      const formEl = document.getElementById('formulaire');
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
   const nextStep = () => {
     if (validateStep(step)) {
       setStep((prev) => Math.min(prev + 1, totalSteps + 1));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToForm();
+    } else {
+      scrollToForm();
     }
   };
 
   const prevStep = () => {
     setErrorMessage(null);
     setStep((prev) => Math.max(prev - 1, 1));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToForm();
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(5)) return;
+    if (!validateStep(5)) {
+      scrollToForm();
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -363,6 +377,7 @@ export default function DossierForm() {
 
       setSubmittedCode(res.codeSuivi);
       setStep(6); // Écran de succès
+      scrollToForm();
       try {
         confetti({
           particleCount: 120,
@@ -374,6 +389,7 @@ export default function DossierForm() {
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Une erreur est survenue lors de l’envoi de votre dossier.');
+      scrollToForm();
     } finally {
       setIsSubmitting(false);
     }
@@ -394,7 +410,7 @@ export default function DossierForm() {
   // ÉCRAN FINAL : SUCCÈS & CODE ATTRIBUÉ
   if (step === 6 && submittedCode) {
     return (
-      <div className="max-w-2xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-100 text-center animate-in fade-in zoom-in duration-300">
+      <div id="formulaire" className="scroll-mt-24 max-w-2xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-100 text-center animate-in fade-in zoom-in duration-300">
         <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
           <CheckCircle2 className="w-12 h-12" />
         </div>
@@ -473,7 +489,7 @@ export default function DossierForm() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto" id="formulaire">
+    <div className="scroll-mt-24 max-w-3xl mx-auto" id="formulaire">
       {/* BARRE DE PROGRESSION VISUELLE */}
       <div className="mb-8">
         <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
