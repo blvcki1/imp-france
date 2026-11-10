@@ -63,7 +63,7 @@ export default function HomePage() {
 
   const avis = [
     {
-      nom: 'Mamadou D.',
+      nom: 'Laurent Moreau',
       ville: 'Lyon (Auvergne-Rhône-Alpes)',
       montant: '940 €',
       date: 'Il y a 4 jours',
@@ -72,25 +72,25 @@ export default function HomePage() {
         'Je pensais honnêtement que comme j’avais de faibles revenus, je n’avais rien à récupérer. L’équipe a analysé mes 3 fiches de paie et mon avis d’imposition. 3 semaines plus tard, j’ai reçu 940 € directement sur mon compte par la DGFiP ! La démarche en photo sur téléphone est magique.',
     },
     {
-      nom: 'Fatoumata S.',
-      ville: 'Saint-Denis (Île-de-France)',
+      nom: 'Sophie Lefèvre',
+      ville: 'Nantes (Pays de la Loire)',
       montant: '1 280 €',
       date: 'Il y a 1 semaine',
       note: 5,
       commentaire:
-        'Je ne comprends rien aux démarches d’impôts et j’avais peur de faire une erreur. Grâce à la plateforme et à l’agent sur le chat qui m’a répondu immédiatement en soirée, j’ai juste envoyé mes photos. Mon code m’a permis de suivre le dossier jusqu’au virement. Merci infiniment !',
+        'Je ne comprends rien aux démarches d’impôts et j’avais peur de faire une erreur. Grâce à la plateforme et au conseiller sur le chat qui m’a répondu immédiatement en soirée, j’ai juste envoyé mes photos. Mon code m’a permis de suivre le dossier jusqu’au virement. Merci infiniment !',
     },
     {
-      nom: 'Koffi A.',
+      nom: 'Nicolas Dubois',
       ville: 'Marseille (PACA)',
       montant: '760 €',
       date: 'Il y a 2 semaines',
       note: 5,
       commentaire:
-        'Service très sérieux, rapide et respectueux. J’ai eu un changement d’employeur l’an dernier et l’administration m’avait trop prélevé à la source. Dossier déposé en 4 minutes, ils se sont occupés de tout. Je recommande à toute la communauté !',
+        'Service très sérieux, rapide et respectueux. J’ai eu un changement d’employeur l’an dernier et l’administration m’avait trop prélevé à la source. Dossier déposé en 4 minutes, ils se sont occupés de tout. Je recommande vivement !',
     },
     {
-      nom: 'Aïssata B.',
+      nom: 'Céline Garnier',
       ville: 'Bordeaux (Nouvelle-Aquitaine)',
       montant: '850 €',
       date: 'Il y a 2 semaines',
@@ -99,7 +99,7 @@ export default function HomePage() {
         'Je recommande à 100%. Tout est clair, on reçoit un code de suivi officiel dès qu’on envoie. Aucune prise de tête avec les déclarations compliquées, le conseiller m’a même appelée pour me confirmer le versement.',
     },
     {
-      nom: 'Jean-Marc T.',
+      nom: 'Jean-Marc Thibault',
       ville: 'Lille (Hauts-de-France)',
       montant: '1 120 €',
       date: 'Il y a 3 semaines',
@@ -108,7 +108,7 @@ export default function HomePage() {
         'Une permanence en ligne indispensable pour nous qui travaillons dur sans avoir le temps d’aller au centre des impôts. Remboursement obtenu sans aucun problème en un mois.',
     },
     {
-      nom: 'Aminata C.',
+      nom: 'Valérie Chevalier',
       ville: 'Toulouse (Occitanie)',
       montant: '690 €',
       date: 'Il y a 1 mois',

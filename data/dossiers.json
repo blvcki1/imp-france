@@ -8,11 +8,11 @@
     "statusMessage": "Vos fiches de paie et votre avis 2026 ont été vérifiés. Nous calculons le montant à réclamer à la DGFiP.",
     "beneficiaire": {
       "civilite": "M.",
-      "nom": "DIALLO",
-      "prenom": "Mamadou",
+      "nom": "MOREAU",
+      "prenom": "Laurent",
       "dateNaissance": "1988-06-14",
       "telephone": "06 12 34 56 78",
-      "email": "m.diallo.contact@exemple.fr",
+      "email": "laurent.moreau.contact@exemple.fr",
       "adresse": "14 rue de la République",
       "codePostal": "69002",
       "ville": "Lyon",
@@ -72,7 +72,7 @@
       {
         "id": "note-1",
         "date": "2026-11-02T04:31:48.901Z",
-        "auteur": "Conseiller Ibrahim",
+        "auteur": "Conseiller Thomas",
         "contenu": "Dossier complet. Estimé à environ 850 € de trop-perçu au titre de l'impôt sur le revenu."
       }
     ],
