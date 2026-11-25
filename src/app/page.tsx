@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import DossierForm from '@/components/DossierForm';
+import ContactSection from '@/components/ContactSection';
 import {
   ShieldCheck,
   Coins,
@@ -495,6 +496,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* SECTION CONTACT & DEMANDE DE RAPPEL */}
+      <ContactSection />
     </div>
   );
 }

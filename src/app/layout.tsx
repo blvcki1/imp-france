@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Link from 'next/link';
-import { ShieldCheck, HelpCircle, FileSearch, Lock, UserCheck } from 'lucide-react';
+import { ShieldCheck, HelpCircle, FileSearch, Lock, UserCheck, Phone } from 'lucide-react';
 import LiveChatWidget from '@/components/LiveChatWidget';
 
 export const metadata: Metadata = {
@@ -53,6 +53,15 @@ export default function RootLayout({
             </Link>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/#contact"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 transition bg-white shadow-sm"
+              >
+                <Phone className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="hidden md:inline">Nous</span>
+                <span>Contacter</span>
+              </Link>
+
               <Link
                 href="/suivi"
                 className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 transition bg-white shadow-sm"
@@ -117,6 +126,9 @@ export default function RootLayout({
             <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
               <p>© {new Date().getFullYear()} Plateforme d’Accompagnement Fiscal Communautaire. Tous droits réservés.</p>
               <div className="flex gap-4">
+                <Link href="/#contact" className="hover:text-slate-300 transition">
+                  Contact & Permanence
+                </Link>
                 <Link href="/suivi" className="hover:text-slate-300 transition">
                   Suivi de dossier
                 </Link>
