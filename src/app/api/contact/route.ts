@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { nom, prenom, telephone, email, codeSuivi, sujet, message } = body;
 
-    if (!nom || !prenom || !telephone || !sujet || !message) {
+    if (!email || !nom || !prenom || !telephone || !message) {
       return NextResponse.json(
-        { error: 'Veuillez remplir tous les champs obligatoires.' },
+        { error: 'Veuillez renseigner votre adresse e-mail, nom, prénom, numéro de téléphone et message.' },
         { status: 400 }
       );
     }
@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
       nom: String(nom).trim(),
       prenom: String(prenom).trim(),
       telephone: String(telephone).trim(),
-      email: email ? String(email).trim() : '',
+      email: String(email).trim(),
       codeSuivi: codeSuivi ? String(codeSuivi).trim() : '',
-      sujet: String(sujet).trim(),
+      sujet: sujet ? String(sujet).trim() : 'Demande de renseignement',
       message: String(message).trim(),
     });
 
