@@ -2,12 +2,18 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { Dossier, DossierStatus, DocumentType, StoredDocument, DossierNote } from './types';
+import {
+  readRemoteJson,
+  writeRemoteJson,
+  writeRemoteFileBuffer,
+  readRemoteFileBuffer,
+} from './persistent-db';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DOSSIERS_FILE = path.join(DATA_DIR, 'dossiers.json');
 const STORAGE_DIR = path.join(DATA_DIR, 'storage', 'dossiers');
+const REMOTE_DOSSIERS_PATH = 'data/dossiers.json';
 
-// Ensure directories exist
 function ensureDirectories() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -20,25 +26,65 @@ function ensureDirectories() {
   }
 }
 
-export function getAllDossiers(): Dossier[] {
+function readLocalDossiers(): Dossier[] {
   ensureDirectories();
   try {
     const raw = fs.readFileSync(DOSSIERS_FILE, 'utf-8');
     return JSON.parse(raw);
-  } catch (error) {
-    console.error('Error reading dossiers file:', error);
+  } catch {
     return [];
   }
 }
 
-export function getDossierById(id: string): Dossier | null {
-  const dossiers = getAllDossiers();
-  return dossiers.find((d) => d.id.toLowerCase() === id.toLowerCase() || d.codeSuivi.toLowerCase() === id.toLowerCase()) || null;
+function writeLocalDossiers(dossiers: Dossier[]) {
+  ensureDirectories();
+  const tempFile = `${DOSSIERS_FILE}.${Date.now()}.tmp`;
+  fs.writeFileSync(tempFile, JSON.stringify(dossiers, null, 2), 'utf-8');
+  fs.renameSync(tempFile, DOSSIERS_FILE);
 }
 
-export function saveDossier(dossier: Dossier): Dossier {
+/**
+ * Récupère tous les dossiers en fusionnant le stockage persistant distant et le disque local
+ */
+export async function getAllDossiers(): Promise<Dossier[]> {
   ensureDirectories();
-  const dossiers = getAllDossiers();
+  const local = readLocalDossiers();
+  const remote = await readRemoteJson<Dossier[]>(REMOTE_DOSSIERS_PATH);
+
+  if (remote && Array.isArray(remote)) {
+    // Merge remote and local by ID (prefer newest updatedAt)
+    const map = new Map<string, Dossier>();
+    for (const d of local) {
+      map.set(d.id, d);
+    }
+    for (const d of remote) {
+      const existing = map.get(d.id);
+      if (!existing || new Date(d.updatedAt) >= new Date(existing.updatedAt)) {
+        map.set(d.id, d);
+      }
+    }
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    writeLocalDossiers(merged);
+    return merged;
+  }
+
+  return local;
+}
+
+export async function getDossierById(id: string): Promise<Dossier | null> {
+  const dossiers = await getAllDossiers();
+  return (
+    dossiers.find(
+      (d) =>
+        d.id.toLowerCase() === id.toLowerCase() || d.codeSuivi.toLowerCase() === id.toLowerCase()
+    ) || null
+  );
+}
+
+export async function saveDossier(dossier: Dossier): Promise<Dossier> {
+  const dossiers = await getAllDossiers();
   const index = dossiers.findIndex((d) => d.id === dossier.id);
 
   dossier.updatedAt = new Date().toISOString();
@@ -49,17 +95,30 @@ export function saveDossier(dossier: Dossier): Dossier {
     dossiers.unshift(dossier);
   }
 
-  // Atomic write to prevent file corruption
-  const tempFile = `${DOSSIERS_FILE}.${Date.now()}.tmp`;
-  fs.writeFileSync(tempFile, JSON.stringify(dossiers, null, 2), 'utf-8');
-  fs.renameSync(tempFile, DOSSIERS_FILE);
+  writeLocalDossiers(dossiers);
+  await writeRemoteJson(
+    REMOTE_DOSSIERS_PATH,
+    dossiers,
+    `Save dossier ${dossier.codeSuivi}`
+  );
 
   return dossier;
 }
 
+export async function deleteDossier(id: string): Promise<boolean> {
+  const dossiers = await getAllDossiers();
+  const filtered = dossiers.filter(
+    (d) => d.id.toLowerCase() !== id.toLowerCase() && d.codeSuivi.toLowerCase() !== id.toLowerCase()
+  );
+  if (filtered.length === dossiers.length) return false;
+
+  writeLocalDossiers(filtered);
+  await writeRemoteJson(REMOTE_DOSSIERS_PATH, filtered, `Delete dossier ${id}`);
+  return true;
+}
+
 export function generateDossierCode(): string {
-  // Ex: IMP-2026-X8K9
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O, 0, I, 1 to avoid confusion
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let suffix = '';
   for (let i = 0; i < 6; i++) {
     suffix += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -95,6 +154,13 @@ export async function saveUploadedFile(
 
   const relativePath = path.join('dossiers', dossierId, storedFilename).replace(/\\/g, '/');
 
+  // Sauvegarde persistante distante du fichier
+  await writeRemoteFileBuffer(
+    `data/storage/${relativePath}`,
+    buffer,
+    `Upload ${storedFilename} for ${dossierId}`
+  );
+
   return {
     id: fileId,
     type: docType,
@@ -109,50 +175,24 @@ export async function saveUploadedFile(
 }
 
 export function getAbsoluteDocumentPath(relativePath: string): string {
-  // Prevent directory traversal attacks
   const safeRelative = path.normalize(relativePath).replace(/^(\.\.[\/\\])+/, '');
   return path.join(DATA_DIR, 'storage', safeRelative);
 }
 
-export function updateDossierStatus(
-  id: string,
-  status: DossierStatus,
-  statusMessage?: string,
-  extra?: { restitutionEstimee?: number; montantRestitue?: number }
-): Dossier | null {
-  const dossier = getDossierById(id);
-  if (!dossier) return null;
-
-  dossier.status = status;
-  if (statusMessage) {
-    dossier.statusMessage = statusMessage;
+export async function getDocumentBuffer(relativePath: string): Promise<Buffer | null> {
+  const absolutePath = getAbsoluteDocumentPath(relativePath);
+  if (fs.existsSync(absolutePath)) {
+    return fs.readFileSync(absolutePath);
   }
-  if (extra?.restitutionEstimee !== undefined) {
-    dossier.restitutionEstimee = extra.restitutionEstimee;
+  const cleanRel = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  const remoteBuf = await readRemoteFileBuffer(`data/storage/${cleanRel}`);
+  if (remoteBuf) {
+    const dir = path.dirname(absolutePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(absolutePath, remoteBuf);
+    return remoteBuf;
   }
-  if (extra?.montantRestitue !== undefined) {
-    dossier.montantRestitue = extra.montantRestitue;
-  }
-
-  return saveDossier(dossier);
+  return null;
 }
-
-export function addDossierNote(
-  id: string,
-  auteur: string,
-  contenu: string
-): Dossier | null {
-  const dossier = getDossierById(id);
-  if (!dossier) return null;
-
-  const note: DossierNote = {
-    id: crypto.randomUUID(),
-    date: new Date().toISOString(),
-    auteur,
-    contenu,
-  };
-
-  dossier.notesGestionnaire.push(note);
-  return saveDossier(dossier);
-}
-

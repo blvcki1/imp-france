@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
+import { readRemoteJson, writeRemoteJson } from './persistent-db';
 
 export interface ChatMessage {
   id: string;
@@ -11,7 +11,7 @@ export interface ChatMessage {
 }
 
 export interface ChatSession {
-  id: string; // session ID
+  id: string;
   visitorName?: string;
   dossierCode?: string;
   createdAt: string;
@@ -22,6 +22,7 @@ export interface ChatSession {
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CHATS_FILE = path.join(DATA_DIR, 'chats.json');
+const REMOTE_CHATS_PATH = 'data/chats.json';
 
 function ensureChatFile() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -32,25 +33,52 @@ function ensureChatFile() {
   }
 }
 
-export function getAllChatSessions(): ChatSession[] {
+function readLocalChats(): ChatSession[] {
   ensureChatFile();
   try {
-    const raw = fs.readFileSync(CHATS_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Erreur lecture chats.json:', err);
+    return JSON.parse(fs.readFileSync(CHATS_FILE, 'utf-8'));
+  } catch {
     return [];
   }
 }
 
-export function getChatSession(sessionId: string): ChatSession | null {
-  const sessions = getAllChatSessions();
+function writeLocalChats(sessions: ChatSession[]) {
+  ensureChatFile();
+  const tmpFile = `${CHATS_FILE}.${Date.now()}.tmp`;
+  fs.writeFileSync(tmpFile, JSON.stringify(sessions, null, 2), 'utf-8');
+  fs.renameSync(tmpFile, CHATS_FILE);
+}
+
+export async function getAllChatSessions(): Promise<ChatSession[]> {
+  ensureChatFile();
+  const local = readLocalChats();
+  const remote = await readRemoteJson<ChatSession[]>(REMOTE_CHATS_PATH);
+
+  if (remote && Array.isArray(remote)) {
+    const map = new Map<string, ChatSession>();
+    for (const s of local) map.set(s.id, s);
+    for (const s of remote) {
+      const existing = map.get(s.id);
+      if (!existing || s.messages.length >= existing.messages.length) {
+        map.set(s.id, s);
+      }
+    }
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+    writeLocalChats(merged);
+    return merged;
+  }
+  return local;
+}
+
+export async function getChatSession(sessionId: string): Promise<ChatSession | null> {
+  const sessions = await getAllChatSessions();
   return sessions.find((s) => s.id === sessionId) || null;
 }
 
-export function saveChatSession(session: ChatSession): ChatSession {
-  ensureChatFile();
-  const sessions = getAllChatSessions();
+export async function saveChatSession(session: ChatSession): Promise<ChatSession> {
+  const sessions = await getAllChatSessions();
   const idx = sessions.findIndex((s) => s.id === session.id);
 
   session.updatedAt = new Date().toISOString();
@@ -61,11 +89,20 @@ export function saveChatSession(session: ChatSession): ChatSession {
     sessions.unshift(session);
   }
 
-  const tmpFile = `${CHATS_FILE}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmpFile, JSON.stringify(sessions, null, 2), 'utf-8');
-  fs.renameSync(tmpFile, CHATS_FILE);
+  writeLocalChats(sessions);
+  await writeRemoteJson(REMOTE_CHATS_PATH, sessions, `Update chat ${session.id}`);
 
   return session;
+}
+
+export async function deleteChatSession(sessionId: string): Promise<boolean> {
+  const sessions = await getAllChatSessions();
+  const filtered = sessions.filter((s) => s.id !== sessionId);
+  if (filtered.length === sessions.length) return false;
+
+  writeLocalChats(filtered);
+  await writeRemoteJson(REMOTE_CHATS_PATH, filtered, `Delete chat ${sessionId}`);
+  return true;
 }
 
 /**
@@ -98,71 +135,46 @@ export function generateInstantAgentReply(userText: string): string {
     lower.includes('pas imposable') ||
     lower.includes('non imposable') ||
     lower.includes('gagne peu') ||
-    lower.includes('smic') ||
-    lower.includes('faible revenu') ||
-    lower.includes('droit')
+    lower.includes('0 euro')
   ) {
-    return "Oui, tout à fait ! Même si vous ne payez aucun impôt, vous pouvez avoir droit à un remboursement : par exemple s'il y a eu des prélèvements à la source sur vos fiches de paie (qui vous seront restitués à 100%), ou si vous avez droit à des crédits d'impôt (garde d'enfants, emploi à domicile, etc.). L'État vous reverse alors directement ces sommes sur votre compte bancaire.";
+    return "Excellente question ! Même si vous n'êtes pas imposable, vous avez tout à fait droit aux crédits d'impôt restituables et à la régularisation des prélèvements à la source. L'administration fiscale vous rembourse directement par virement bancaire.";
   }
 
   if (
-    lower.includes('avis') ||
-    lower.includes('imposition') ||
-    lower.includes('ou trouver') ||
-    lower.includes('asdir') ||
-    lower.includes('2026')
-  ) {
-    return "Votre avis d'imposition est disponible sur votre espace particulier sur impots.gouv.fr (rubrique « Mes documents »). Si vous ne l'avez pas encore pour 2026, vous pouvez déposer votre avis 2025 ou votre avis de situation déclarative (ASDIR). Nos conseillers pourront quand même analyser votre dossier !";
-  }
-
-  if (
-    lower.includes('edf') ||
-    lower.includes('domicile') ||
-    lower.includes('electricite') ||
-    lower.includes('quittance') ||
-    lower.includes('hebergement')
-  ) {
-    return "Pour le justificatif de domicile : une facture EDF (électricité ou gaz) de moins de 3 mois est parfaite. Si vous n'avez pas de facture à votre nom, une quittance de loyer ou une attestation d'hébergement signée avec la pièce d'identité de votre hébergeant est également acceptée.";
-  }
-
-  if (
-    lower.includes('code') ||
-    lower.includes('suivi') ||
-    lower.includes('numero') ||
-    lower.includes('retrouver')
-  ) {
-    return "Dès que vous validez l'envoi de vos documents sur la page d'accueil, un code unique au format IMP-2026-XXXXXX s'affiche immédiatement. Vous pouvez ensuite vous rendre sur l'onglet 'Suivre mon dossier' en haut du site pour vérifier l'avancement en direct.";
-  }
-
-  if (
-    lower.includes('gratuit') ||
-    lower.includes('payant') ||
     lower.includes('combien') ||
-    lower.includes('tarif') ||
-    lower.includes('prix')
+    lower.includes('montant') ||
+    lower.includes('somme') ||
+    lower.includes('argent') ||
+    lower.includes('remboursement')
   ) {
-    return "Notre accompagnement communautaire est un service solidaire d'aide aux démarches. Le dépôt de vos documents et l'analyse de votre dossier sont entièrement pris en charge par notre collectif pour vous aider à faire valoir vos droits.";
+    return "Le montant restitué dépend de votre situation (revenus, prélèvement à la source, charges, frais ou crédits d'impôt). En moyenne, les dossiers accompagnés obtiennent entre 450 € et 1 850 € de restitution. Déposez vos pièces dans le formulaire pour que nos conseillers calculent votre montant exact gratuitement.";
   }
 
   if (
     lower.includes('delai') ||
     lower.includes('délai') ||
-    lower.includes('combien de temps') ||
-    lower.includes('quand')
+    lower.includes('quand') ||
+    lower.includes('temps')
   ) {
-    return "Dès réception, nos conseillers vérifient vos pièces sous 24h à 48h ouvrées. Une fois la demande ou réclamation déposée auprès de la DGFiP (Finances Publiques), le délai moyen de virement constaté varie de 2 à 4 semaines selon votre centre des impôts.";
+    return "Dès que vous déposez vos documents sur le site, vous recevez immédiatement votre code de suivi (ex: IMP-2026-XXXX). Nos conseillers vérifient votre dossier sous 24h à 48h avant transmission à la DGFiP.";
   }
 
   if (
-    lower.includes('rib') ||
-    lower.includes('compte') ||
-    lower.includes('banque') ||
-    lower.includes('virement')
+    lower.includes('gratuit') ||
+    lower.includes('payer') ||
+    lower.includes('prix') ||
+    lower.includes('tarif')
   ) {
-    return "Le RIB doit être au nom du bénéficiaire principal. C'est sur ce compte bancaire que l'administration fiscale effectuera directement le virement de la restitution.";
+    return "Notre permanence d'accompagnement communautaire est 100% gratuite et solidaire. Aucun frais d'inscription ne vous sera demandé pour constituer et vérifier votre dossier.";
   }
 
-  // Réponse par défaut chaleureuse et orientée action
-  return "Bien reçu ! Votre question est enregistrée. Si vous souhaitez déposer vos pièces pour vérification, il vous suffit de remplir le formulaire sur la page principale avec vos 4 documents (Pièce d'identité, Avis 2026, 3 fiches de paie, Facture EDF). Un conseiller humain de la permanence consulte également vos messages ici.";
-}
+  if (
+    lower.includes('suivi') ||
+    lower.includes('code') ||
+    lower.includes('imp-2026')
+  ) {
+    return "Pour suivre votre dossier, cliquez sur le bouton « Suivre mon dossier » en haut de la page et entrez le code qui vous a été remis lors de votre dépôt (format IMP-2026-XXXXXX).";
+  }
 
+  return "Merci pour votre message ! Je l'ai transmis à notre conseiller de permanence qui suit votre conversation en direct. En attendant, n'hésitez pas à déposer directement vos documents via le formulaire sur la page d'accueil (cela prend 3 minutes) ou à me préciser votre question !";
+}

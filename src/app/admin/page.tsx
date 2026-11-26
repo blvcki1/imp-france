@@ -29,6 +29,7 @@ import {
   Copy,
   Check,
   FileSpreadsheet,
+  Trash2,
 } from 'lucide-react';
 import { Dossier, DossierStatus } from '@/lib/types';
 import { ChatSession } from '@/lib/chat-storage';
@@ -126,6 +127,60 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error('Erreur statut contact:', err);
+    }
+  };
+
+  const handleDeleteDossier = async (id: string, codeSuivi: string) => {
+    if (!window.confirm(`Voulez-vous vraiment supprimer définitivement le dossier ${codeSuivi} ?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/dossiers/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDossiers((prev) => prev.filter((d) => d.id !== id && d.codeSuivi !== id));
+        if (selectedDossier && (selectedDossier.id === id || selectedDossier.codeSuivi === id)) {
+          setSelectedDossier(null);
+        }
+      }
+    } catch (err) {
+      console.error('Erreur suppression dossier:', err);
+    }
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    if (!window.confirm('Voulez-vous vraiment supprimer ce message de la boîte de réception ?')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/contact?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setContacts((prev) => {
+          const remaining = prev.filter((c) => c.id !== id);
+          if (selectedContact?.id === id) {
+            setSelectedContact(remaining[0] || null);
+          }
+          return remaining;
+        });
+      }
+    } catch (err) {
+      console.error('Erreur suppression contact:', err);
+    }
+  };
+
+  const handleDeleteChat = async (sessionId: string) => {
+    if (!window.confirm('Voulez-vous vraiment supprimer cette conversation de chat ?')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/chat?sessionId=${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
+        if (selectedChat?.id === sessionId) {
+          setSelectedChat(null);
+        }
+      }
+    } catch (err) {
+      console.error('Erreur suppression chat:', err);
     }
   };
 
@@ -680,16 +735,28 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                           })}
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDossierDetail(d);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition"
-                          >
-                            <span>Voir dossier</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDossierDetail(d);
+                              }}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition"
+                            >
+                              <span>Voir dossier</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDossier(d.id, d.codeSuivi);
+                              }}
+                              title="Supprimer ce dossier"
+                              className="p-1.5 rounded-xl text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -785,6 +852,14 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                       L'agent instantané répond automatiquement, mais vous pouvez intervenir manuellement à tout moment.
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleDeleteChat(selectedChat.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold transition"
+                    title="Supprimer cette conversation"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Supprimer</span>
+                  </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60 rounded-2xl my-3 text-xs">
@@ -965,19 +1040,30 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
 
-                        <button
-                          onClick={() => toggleContactStatus(selectedContact.id, selectedContact.status)}
-                          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
-                            selectedContact.status === 'nouveau'
-                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                          }`}
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span>
-                            {selectedContact.status === 'nouveau' ? 'Marquer comme traité' : 'Marquer comme non lu'}
-                          </span>
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => toggleContactStatus(selectedContact.id, selectedContact.status)}
+                            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                              selectedContact.status === 'nouveau'
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                            }`}
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>
+                              {selectedContact.status === 'nouveau' ? 'Marquer comme traité' : 'Marquer comme non lu'}
+                            </span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteContact(selectedContact.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold transition"
+                            title="Supprimer définitivement ce message"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Supprimer</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* FICHE COORDONNÉES DE L'EXPÉDITEUR */}
@@ -1084,12 +1170,22 @@ DATE DÉPÔT: ${new Date(selectedDossier.createdAt).toLocaleDateString('fr-FR')}
                   {selectedDossier.beneficiaire.prenom}
                 </h2>
               </div>
-              <button
-                onClick={() => setSelectedDossier(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDeleteDossier(selectedDossier.id, selectedDossier.codeSuivi)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold transition"
+                  title="Supprimer définitivement ce dossier"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Supprimer</span>
+                </button>
+                <button
+                  onClick={() => setSelectedDossier(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* CONTENU MODALE */}

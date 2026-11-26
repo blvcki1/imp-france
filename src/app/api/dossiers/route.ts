@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       consentementRGPD: formData.get('consentementRGPD') === 'true',
     };
 
-    saveDossier(nouveauDossier);
+    await saveDossier(nouveauDossier);
 
     return NextResponse.json(
       {
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
 
     if (code) {
-      const dossier = getDossierById(code.trim());
+      const dossier = await getDossierById(code.trim());
       if (!dossier) {
         return NextResponse.json(
           { error: 'Aucun dossier trouvé pour ce code.' },
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Liste complète pour l'admin
-    const dossiers = getAllDossiers();
+    const dossiers = await getAllDossiers();
     return NextResponse.json(
       {
         success: true,

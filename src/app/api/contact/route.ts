@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllContacts, createContactMessage, updateContactStatus } from '@/lib/contact-storage';
+import {
+  getAllContacts,
+  createContactMessage,
+  updateContactStatus,
+  deleteContactMessage,
+} from '@/lib/contact-storage';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const contacts = getAllContacts();
+    const contacts = await getAllContacts();
     return NextResponse.json(
       { contacts },
       {
@@ -35,7 +40,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const contact = createContactMessage({
+    const contact = await createContactMessage({
       nom: String(nom).trim(),
       prenom: String(prenom).trim(),
       telephone: String(telephone).trim(),
@@ -61,7 +66,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 });
     }
 
-    const updated = updateContactStatus(id, status);
+    const updated = await updateContactStatus(id, status);
     if (!updated) {
       return NextResponse.json({ error: 'Message introuvable' }, { status: 404 });
     }
@@ -70,5 +75,25 @@ export async function PATCH(req: NextRequest) {
   } catch (err) {
     console.error('Erreur PATCH /api/contact:', err);
     return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    }
+
+    const deleted = await deleteContactMessage(id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Message introuvable' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Erreur DELETE /api/contact:', err);
+    return NextResponse.json({ error: 'Erreur suppression' }, { status: 500 });
   }
 }

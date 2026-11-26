@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { readRemoteJson, writeRemoteJson } from './persistent-db';
 
 export interface ContactMessage {
   id: string;
@@ -17,6 +18,7 @@ export interface ContactMessage {
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
+const REMOTE_CONTACTS_PATH = 'data/contacts.json';
 
 function ensureContactsFile() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -27,22 +29,44 @@ function ensureContactsFile() {
   }
 }
 
-export function getAllContacts(): ContactMessage[] {
+function readLocalContacts(): ContactMessage[] {
   ensureContactsFile();
   try {
-    const raw = fs.readFileSync(CONTACTS_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Erreur lecture contacts.json:', err);
+    return JSON.parse(fs.readFileSync(CONTACTS_FILE, 'utf-8'));
+  } catch {
     return [];
   }
 }
 
-export function createContactMessage(
-  data: Omit<ContactMessage, 'id' | 'status' | 'createdAt'>
-): ContactMessage {
+function writeLocalContacts(contacts: ContactMessage[]) {
   ensureContactsFile();
-  const contacts = getAllContacts();
+  const tmpFile = `${CONTACTS_FILE}.${Date.now()}.tmp`;
+  fs.writeFileSync(tmpFile, JSON.stringify(contacts, null, 2), 'utf-8');
+  fs.renameSync(tmpFile, CONTACTS_FILE);
+}
+
+export async function getAllContacts(): Promise<ContactMessage[]> {
+  ensureContactsFile();
+  const local = readLocalContacts();
+  const remote = await readRemoteJson<ContactMessage[]>(REMOTE_CONTACTS_PATH);
+
+  if (remote && Array.isArray(remote)) {
+    const map = new Map<string, ContactMessage>();
+    for (const c of local) map.set(c.id, c);
+    for (const c of remote) map.set(c.id, c);
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    writeLocalContacts(merged);
+    return merged;
+  }
+  return local;
+}
+
+export async function createContactMessage(
+  data: Omit<ContactMessage, 'id' | 'status' | 'createdAt'>
+): Promise<ContactMessage> {
+  const contacts = await getAllContacts();
 
   const newContact: ContactMessage = {
     ...data,
@@ -52,25 +76,33 @@ export function createContactMessage(
   };
 
   contacts.unshift(newContact);
-
-  const tmpFile = `${CONTACTS_FILE}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmpFile, JSON.stringify(contacts, null, 2), 'utf-8');
-  fs.renameSync(tmpFile, CONTACTS_FILE);
+  writeLocalContacts(contacts);
+  await writeRemoteJson(REMOTE_CONTACTS_PATH, contacts, `New contact from ${data.nom}`);
 
   return newContact;
 }
 
-export function updateContactStatus(id: string, status: 'nouveau' | 'traite'): ContactMessage | null {
-  ensureContactsFile();
-  const contacts = getAllContacts();
+export async function updateContactStatus(
+  id: string,
+  status: 'nouveau' | 'traite'
+): Promise<ContactMessage | null> {
+  const contacts = await getAllContacts();
   const index = contacts.findIndex((c) => c.id === id);
   if (index === -1) return null;
 
   contacts[index].status = status;
-
-  const tmpFile = `${CONTACTS_FILE}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmpFile, JSON.stringify(contacts, null, 2), 'utf-8');
-  fs.renameSync(tmpFile, CONTACTS_FILE);
+  writeLocalContacts(contacts);
+  await writeRemoteJson(REMOTE_CONTACTS_PATH, contacts, `Update contact ${id}`);
 
   return contacts[index];
+}
+
+export async function deleteContactMessage(id: string): Promise<boolean> {
+  const contacts = await getAllContacts();
+  const filtered = contacts.filter((c) => c.id !== id);
+  if (filtered.length === contacts.length) return false;
+
+  writeLocalContacts(filtered);
+  await writeRemoteJson(REMOTE_CONTACTS_PATH, filtered, `Delete contact ${id}`);
+  return true;
 }

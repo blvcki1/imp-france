@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   User,
   Phone,
@@ -222,6 +222,34 @@ export default function DossierForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submittedCode, setSubmittedCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+
+  // Restaurer le brouillon en cours si le visiteur rafraîchit la page
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem('restitution_dossier_draft_v1');
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed && typeof parsed === 'object') {
+          setFormData((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setDraftHydrated(true);
+    }
+  }, []);
+
+  // Sauvegarder automatiquement les champs saisis
+  useEffect(() => {
+    if (!draftHydrated) return;
+    try {
+      localStorage.setItem('restitution_dossier_draft_v1', JSON.stringify(formData));
+    } catch {
+      // ignore
+    }
+  }, [formData, draftHydrated]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -376,6 +404,11 @@ export default function DossierForm() {
       }
 
       setSubmittedCode(res.codeSuivi);
+      try {
+        localStorage.removeItem('restitution_dossier_draft_v1');
+      } catch {
+        // ignore
+      }
       setStep(6); // Écran de succès
       scrollToForm();
       try {

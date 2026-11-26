@@ -3,6 +3,7 @@ import {
   getAllChatSessions,
   getChatSession,
   saveChatSession,
+  deleteChatSession,
   generateInstantAgentReply,
   ChatSession,
   ChatMessage,
@@ -19,28 +20,26 @@ const noCacheHeaders = {
   'Expires': '0',
 };
 
-// GET: Récupère les sessions ou les messages d'une session spécifique
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
 
     if (sessionId) {
-      const session = getChatSession(sessionId);
+      const session = await getChatSession(sessionId);
       if (!session) {
         return NextResponse.json({ success: true, messages: [] }, { headers: noCacheHeaders });
       }
       return NextResponse.json({ success: true, session }, { headers: noCacheHeaders });
     }
 
-    const sessions = getAllChatSessions();
+    const sessions = await getAllChatSessions();
     return NextResponse.json({ success: true, sessions }, { headers: noCacheHeaders });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
 }
 
-// PATCH: Marquer une session comme lue par l'admin
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -50,10 +49,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'sessionId requis' }, { status: 400, headers: noCacheHeaders });
     }
 
-    const session = getChatSession(sessionId);
+    const session = await getChatSession(sessionId);
     if (session && session.unreadAdminCount > 0) {
       session.unreadAdminCount = 0;
-      saveChatSession(session);
+      await saveChatSession(session);
     }
 
     return NextResponse.json({ success: true, session }, { headers: noCacheHeaders });
@@ -62,7 +61,6 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// POST: Envoi d'un message et réponse instantanée de l'agent
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const currentSessionId = sessionId || `chat_${Date.now()}_${crypto.randomUUID().slice(0, 6)}`;
-    let session = getChatSession(currentSessionId);
+    let session = await getChatSession(currentSessionId);
 
     if (!session) {
       session = {
@@ -99,41 +97,55 @@ export async function POST(request: NextRequest) {
 
     session.messages.push(userMsg);
 
-    // Si le message vient du visiteur, générer immédiatement la réponse de l'agent
-    let agentMsg: ChatMessage | null = null;
     if (sender !== 'admin') {
       session.unreadAdminCount = (session.unreadAdminCount || 0) + 1;
 
-      const replyText = generateInstantAgentReply(userMsg.text);
+      const hasHumanAdvisorReplied = session.messages.some((m) => m.sender === 'human_advisor');
 
-      agentMsg = {
-        id: crypto.randomUUID(),
-        sender: 'agent',
-        authorName: 'Agent Restitution Impôts',
-        text: replyText,
-        timestamp: new Date().toISOString(),
-      };
-
-      session.messages.push(agentMsg);
+      if (!hasHumanAdvisorReplied) {
+        const autoReplyText = generateInstantAgentReply(text);
+        const agentMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          sender: 'agent',
+          authorName: 'Assistant Restitution Impôts',
+          text: autoReplyText,
+          timestamp: new Date(Date.now() + 500).toISOString(),
+        };
+        session.messages.push(agentMsg);
+      }
     } else {
-      // Si l'admin répond, réinitialiser le compteur non lu
       session.unreadAdminCount = 0;
     }
 
-    saveChatSession(session);
+    await saveChatSession(session);
 
     return NextResponse.json(
       {
         success: true,
         sessionId: session.id,
-        userMessage: userMsg,
-        agentMessage: agentMsg,
         messages: session.messages,
       },
       { headers: noCacheHeaders }
     );
   } catch (error: any) {
     console.error('Erreur API Chat:', error);
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get('sessionId');
+    if (!sessionId) {
+      return NextResponse.json({ error: 'sessionId requis' }, { status: 400, headers: noCacheHeaders });
+    }
+    const deleted = await deleteChatSession(sessionId);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Conversation introuvable' }, { status: 404, headers: noCacheHeaders });
+    }
+    return NextResponse.json({ success: true }, { headers: noCacheHeaders });
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
 }

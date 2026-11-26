@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDossierById, saveDossier } from '@/lib/storage';
+import { getDossierById, saveDossier, deleteDossier } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,7 +18,7 @@ interface RouteProps {
 export async function GET(request: NextRequest, { params }: RouteProps) {
   try {
     const { id } = await params;
-    const dossier = getDossierById(id);
+    const dossier = await getDossierById(id);
     if (!dossier) {
       return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404, headers: noCacheHeaders });
     }
@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     const { id } = await params;
     const body = await request.json();
 
-    const dossier = getDossierById(id);
+    const dossier = await getDossierById(id);
     if (!dossier) {
       return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404, headers: noCacheHeaders });
     }
@@ -59,8 +59,21 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
       });
     }
 
-    const updated = saveDossier(dossier);
+    const updated = await saveDossier(dossier);
     return NextResponse.json({ success: true, dossier: updated }, { headers: noCacheHeaders });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteProps) {
+  try {
+    const { id } = await params;
+    const deleted = await deleteDossier(id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404, headers: noCacheHeaders });
+    }
+    return NextResponse.json({ success: true }, { headers: noCacheHeaders });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: noCacheHeaders });
   }
