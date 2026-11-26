@@ -1,5 +1,114 @@
 [
   {
+    "id": "IMP-2026-N5KWBQ",
+    "codeSuivi": "IMP-2026-N5KWBQ",
+    "createdAt": "2026-11-26T13:16:31.198Z",
+    "updatedAt": "2026-11-26T13:16:31.438Z",
+    "status": "en_attente",
+    "statusMessage": "Votre dossier a été enregistré avec succès. Un conseiller va vérifier vos pièces sous 48h ouvrées.",
+    "beneficiaire": {
+      "civilite": "M.",
+      "nom": "YU",
+      "prenom": "Hr",
+      "telephone": "06283854221",
+      "email": "hdyyye@luve.fr",
+      "adresse": "3rue du feu",
+      "codePostal": "75000",
+      "ville": "Paris",
+      "anneeImposition": "2026",
+      "situationFamiliale": "celibataire",
+      "nombreEnfants": 0
+    },
+    "documents": [
+      {
+        "id": "6addcdf7-07b7-47f1-899f-4492fc4a9d9e",
+        "type": "identite",
+        "label": "Pièce d'identité (CNI / Passeport / Séjour)",
+        "originalName": "IMG_8177.jpeg",
+        "storedFilename": "identite_6addcdf7_IMG_8177.jpeg",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/identite_6addcdf7_IMG_8177.jpeg",
+        "mimeType": "image/jpeg",
+        "size": 151341,
+        "uploadedAt": "2026-11-26T13:16:15.964Z"
+      },
+      {
+        "id": "e44d0b99-f53c-4e76-8f81-49f511a1d6e0",
+        "type": "avis_imposition",
+        "label": "Avis d'imposition 2026 / Récent",
+        "originalName": "IMG_8174.png",
+        "storedFilename": "avis_imposition_e44d0b99_IMG_8174.png",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/avis_imposition_e44d0b99_IMG_8174.png",
+        "mimeType": "image/png",
+        "size": 1022507,
+        "uploadedAt": "2026-11-26T13:16:18.792Z"
+      },
+      {
+        "id": "107f2428-a6b7-47a1-87f0-05baa5e79fde",
+        "type": "fiche_paie_1",
+        "label": "Bulletin de paie (Mois 1)",
+        "originalName": "IMG_8168.jpeg",
+        "storedFilename": "fiche_paie_1_107f2428_IMG_8168.jpeg",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/fiche_paie_1_107f2428_IMG_8168.jpeg",
+        "mimeType": "image/jpeg",
+        "size": 2933292,
+        "uploadedAt": "2026-11-26T13:16:21.572Z"
+      },
+      {
+        "id": "536a5632-f21d-4dc1-8556-44e77e30ea8a",
+        "type": "fiche_paie_2",
+        "label": "Bulletin de paie (Mois 2)",
+        "originalName": "IMG_8167.png",
+        "storedFilename": "fiche_paie_2_536a5632_IMG_8167.png",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/fiche_paie_2_536a5632_IMG_8167.png",
+        "mimeType": "image/png",
+        "size": 1008415,
+        "uploadedAt": "2026-11-26T13:16:24.045Z"
+      },
+      {
+        "id": "9081dab1-fabc-444d-9c6b-593172bfcf53",
+        "type": "fiche_paie_3",
+        "label": "Bulletin de paie (Mois 3)",
+        "originalName": "IMG_8161.png",
+        "storedFilename": "fiche_paie_3_9081dab1_IMG_8161.png",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/fiche_paie_3_9081dab1_IMG_8161.png",
+        "mimeType": "image/png",
+        "size": 4029027,
+        "uploadedAt": "2026-11-26T13:16:27.445Z"
+      },
+      {
+        "id": "457273cb-396b-462b-a120-d1b57537cf08",
+        "type": "justificatif_domicile",
+        "label": "Justificatif de domicile (EDF / Énergie)",
+        "originalName": "IMG_8158.png",
+        "storedFilename": "justificatif_domicile_457273cb_IMG_8158.png",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/justificatif_domicile_457273cb_IMG_8158.png",
+        "mimeType": "image/png",
+        "size": 415147,
+        "uploadedAt": "2026-11-26T13:16:29.171Z"
+      },
+      {
+        "id": "de608e8f-801f-43a0-af86-0642261fad96",
+        "type": "rib",
+        "label": "Relevé d'Identité Bancaire (RIB)",
+        "originalName": "a594aac3-8bb2-412c-b88c-d4c6d8270d80.jpeg",
+        "storedFilename": "rib_de608e8f_a594aac3-8bb2-412c-b88c-d4c6d8.jpeg",
+        "relativePath": "dossiers/IMP-2026-N5KWBQ/rib_de608e8f_a594aac3-8bb2-412c-b88c-d4c6d8.jpeg",
+        "mimeType": "image/jpeg",
+        "size": 291872,
+        "uploadedAt": "2026-11-26T13:16:31.198Z"
+      }
+    ],
+    "notesGestionnaire": [
+      {
+        "id": "initial",
+        "date": "2026-11-26T13:16:31.198Z",
+        "auteur": "Système",
+        "contenu": "Dossier créé en ligne avec 7 document(s) joint(s)."
+      }
+    ],
+    "consentementRGPD": true
+  },
+  {
     "id": "IMP-2026-DEMO01",
     "codeSuivi": "IMP-2026-DEMO01",
     "createdAt": "2026-11-02T04:31:48.892Z",
